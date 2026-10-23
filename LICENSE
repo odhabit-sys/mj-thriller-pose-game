@@ -19,9 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-This license applies to the original source code of this project only. It does
-not relicense any third-party material included in or used by the project (the
-3D character model, the MediaPipe runtime and model, three.js, and the Michael
-Jackson reference photos and sound clips), which keep their own licenses and
-rights. See docs/CREDITS.md.

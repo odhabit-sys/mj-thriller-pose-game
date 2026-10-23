@@ -35,8 +35,7 @@ export interface PoseDefinition {
   /** Drives wave-based selection (see poseSelector.ts). */
   difficulty: PoseDifficulty;
   /**
-   * Image shown on the pose card: public/poses/ in production, the identical local copy in
-   * dev-reference/ during development. Null = no image (the card shows the text instruction).
+   * Image shown on the pose card (public/poses/). Null = no image (the card shows the text instruction).
    */
   referenceImage: string | null;
   /** Alt text for the reference photo. */
@@ -58,19 +57,14 @@ export interface PoseDefinition {
 }
 
 /**
- * Pose-card images: one reference photo per playable pose in public/poses/ (shipped with the
- * game). `npm run dev` reads the same photos from the local dev-reference/ folder (git-ignored);
- * `?cards=public` makes the dev server use public/poses/ instead. A missing image falls back
- * to the written instruction on the card (see GameHud).
+ * Pose-card images: one reference photo per playable pose in public/poses/. A missing image
+ * falls back to the written instruction on the card (see GameHud).
  */
 export const PUBLIC_POSE_CARD_DIR = "poses";
-const previewPublicCards = typeof location !== "undefined" && new URLSearchParams(location.search).get("cards") === "public";
-const usePhotos = import.meta.env.DEV && !previewPublicCards;
-const devRef = (file: string) => `/dev-reference/${file}`;
 const publicCard = (file: string) => `${import.meta.env.BASE_URL ?? "/"}${PUBLIC_POSE_CARD_DIR}/${file}`;
 
 interface ReferencePhoto {
-  /** File name in public/poses/ (and in the local dev-reference/ folder). */
+  /** File name in public/poses/. */
   file: string;
   alt: string;
   position?: string;
@@ -84,7 +78,7 @@ const entry = (classifier: PoseClassifier, displayName: string, difficulty: Pose
   classifier,
   instruction: classifier.description,
   difficulty,
-  referenceImage: photo ? (usePhotos ? devRef(photo.file) : publicCard(photo.file)) : null,
+  referenceImage: photo ? publicCard(photo.file) : null,
   referenceImageAlt: photo?.alt ?? `${displayName} pose`,
   referenceImagePosition: photo?.position ?? "center",
   referenceImageScale: photo?.scale ?? 1,

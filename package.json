@@ -4,6 +4,11 @@
   "private": true,
   "type": "module",
   "description": "A browser game where your webcam becomes the controller: copy iconic dance poses to unleash attacks against approaching zombies.",
+  "homepage": "https://mj-thriller-pose-game.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/odhabit-sys/mj-thriller-pose-game.git"
+  },
   "license": "MIT",
   "scripts": {
     "copy-wasm": "node scripts/copy-mediapipe-wasm.mjs",

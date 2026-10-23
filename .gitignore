@@ -6,7 +6,7 @@ dist
 # Copied from node_modules by scripts/copy-mediapipe-wasm.mjs (rebuilt on every dev/build)
 public/mediapipe
 
-# Local-only pose reference photos (copyrighted, never ship them)
+# Local working folder for reference photos (the game uses public/poses/)
 dev-reference
 
 # Copyrighted background music, kept on the development machine only (see docs/CREDITS.md)

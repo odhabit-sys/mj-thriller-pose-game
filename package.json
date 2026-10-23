@@ -1,0 +1,32 @@
+{
+  "name": "mj-thriller-pose-game",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A browser game where your webcam becomes the controller: copy iconic dance poses to unleash attacks against approaching zombies.",
+  "license": "MIT",
+  "scripts": {
+    "copy-wasm": "node scripts/copy-mediapipe-wasm.mjs",
+    "predev": "npm run copy-wasm",
+    "dev": "vite",
+    "prebuild": "npm run copy-wasm",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview",
+    "test": "vite build --ssr tests/all.test.ts --outDir node_modules/.cache/pose-tests --emptyOutDir --logLevel warn && node --test node_modules/.cache/pose-tests/all.test.js",
+    "check:release": "vite build --ssr scripts/releaseCheck.ts --outDir node_modules/.cache/release-check --emptyOutDir --logLevel warn && node node_modules/.cache/release-check/releaseCheck.js"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "1.1.1",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/three": "^0.186.0",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.4"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}

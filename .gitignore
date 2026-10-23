@@ -1,0 +1,32 @@
+# Dependencies and build output
+node_modules
+dist
+*.tsbuildinfo
+
+# Copied from node_modules by scripts/copy-mediapipe-wasm.mjs (rebuilt on every dev/build)
+public/mediapipe
+
+# Local-only pose reference photos (copyrighted, never ship them)
+dev-reference
+
+# Copyrighted background music, kept on the development machine only (see docs/CREDITS.md)
+public/audio/local/thriller.mp3
+
+# Internal development screenshots (README images live in docs/images)
+docs/screenshots
+
+# Deployment / environment
+.vercel
+.env
+.env.*
+
+# Logs, caches, OS and editor files
+*.log
+npm-debug.log*
+.cache
+coverage
+.DS_Store
+Thumbs.db
+.idea
+.vscode
+*.swp

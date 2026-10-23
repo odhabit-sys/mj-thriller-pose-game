@@ -1,0 +1,756 @@
+:root {
+  --bg: #0b0b10;
+  --fg: #f4f4f6;
+  --muted: #9a9aa8;
+  --accent: #ffc400;
+  --ok: #00e676;
+  --bad: #ff5252;
+  color-scheme: dark;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.app {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 44px);
+  letter-spacing: 0.08em;
+}
+
+.instruction {
+  margin: 4px 0;
+  font-size: 18px;
+}
+
+.target {
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+
+.pose-select {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+.pose-select-label {
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+.pose-option {
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 2px solid #3a3a48;
+  background: #15151d;
+  color: var(--fg);
+  cursor: pointer;
+}
+.pose-option.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #111;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.intro,
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 48px 16px;
+  text-align: center;
+}
+
+.big-button {
+  font: inherit;
+  font-size: clamp(20px, 3vw, 28px);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 20px 48px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #111;
+  cursor: pointer;
+}
+.big-button.small {
+  font-size: 18px;
+  padding: 12px 28px;
+}
+.big-button:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.privacy {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.error p {
+  color: var(--bad);
+  max-width: 640px;
+  white-space: pre-wrap;
+}
+
+/* ---- Viewer ---- */
+
+.workspace {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.reference {
+  flex: 0 0 min(28%, 340px);
+  background: #15151d;
+  border-radius: 12px;
+  padding: 8px;
+}
+.reference img {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+}
+.reference p {
+  margin: 6px 2px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+@media (max-width: 800px) {
+  .workspace {
+    flex-direction: column;
+  }
+  .reference {
+    flex-basis: auto;
+    width: min(100%, 340px);
+  }
+}
+
+.viewer {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/*
+ * MIRRORING: video and skeleton canvas are flipped TOGETHER here, as one unit.
+ * The canvas is drawn in raw (unmirrored) camera pixels, so after this single
+ * transform the skeleton lines up with the mirrored video. Do not mirror the
+ * <video> or <canvas> individually.
+ */
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  transform: scaleX(-1);
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.stage video,
+.stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* "fill" keeps canvas and video pixel-aligned; the stage aspect ratio matches the camera. */
+  object-fit: fill;
+}
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+}
+
+.hud-top {
+  display: flex;
+  gap: 8px;
+  align-self: stretch;
+  flex-wrap: wrap;
+}
+
+.chip {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.chip[data-status="tracking"] {
+  color: var(--ok);
+}
+.chip[data-status="lost"],
+.chip[data-status="no-person"] {
+  color: var(--bad);
+}
+.chip[data-state="MATCHING"] {
+  color: var(--accent);
+}
+.chip[data-state="CONFIRMED"],
+.chip[data-state="WAITING_FOR_RELEASE"] {
+  color: var(--ok);
+}
+
+.status {
+  margin-top: auto;
+  background: rgba(0, 0, 0, 0.65);
+  padding: 8px 20px;
+  border-radius: 10px;
+  font-size: clamp(20px, 3.5vw, 34px);
+  font-weight: 800;
+  text-align: center;
+}
+.status.hold {
+  color: var(--accent);
+}
+.status.matched {
+  color: var(--ok);
+}
+.status.release {
+  color: var(--muted);
+}
+
+.progress {
+  width: min(480px, 80%);
+  height: 14px;
+  margin-top: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+}
+.progress-fill[data-state="CONFIRMED"] {
+  background: var(--ok);
+}
+
+.matched-banner {
+  position: absolute;
+  top: 40%;
+  font-size: clamp(36px, 8vw, 88px);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: var(--ok);
+  text-shadow: 0 0 24px rgba(0, 230, 118, 0.8), 0 4px 0 #000;
+  animation: pop 0.35s ease-out;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.debug {
+  margin-top: 12px;
+  background: #15151d;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.debug summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.debug pre {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-x: auto;
+}
+
+/* ---- Modes: body[data-mode="game" | "debug"] ---- */
+
+body[data-mode="game"] .debug-only,
+body[data-mode="debug"] .game-only {
+  display: none !important;
+}
+
+.title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+.mode-link {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Game layout: big pose reference on the left, webcam preview on the right. */
+body[data-mode="game"] .workspace {
+  align-items: stretch;
+}
+body[data-mode="game"] .viewer {
+  flex: 0 0 min(38%, 520px);
+  align-self: flex-start;
+}
+/* The webcam HUD overlay only keeps the tracking chip in game mode. */
+body[data-mode="game"] .hud .status,
+body[data-mode="game"] .hud .progress,
+body[data-mode="game"] .hud .matched-banner,
+body[data-mode="game"] #state-chip,
+body[data-mode="game"] #count-chip {
+  display: none !important;
+}
+
+.game-panel {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: #15151d;
+  border-radius: 12px;
+  padding: 16px;
+}
+.game-kicker {
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.game-card {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  border-radius: 12px;
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+.game-card img {
+  display: block;
+  max-width: 100%;
+  height: min(56vh, 560px);
+  object-fit: contain;
+  border-radius: 10px;
+  background: #0b0b10;
+}
+.game-card[data-phase="TARGET_CONFIRMED"] {
+  transform: scale(1.03);
+  box-shadow: 0 0 0 4px var(--ok), 0 0 32px rgba(0, 230, 118, 0.6);
+}
+.game-card[data-phase="TRANSITION"] {
+  opacity: 0.6;
+}
+.game-ref-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: min(40vh, 400px);
+  padding: 24px;
+  font-size: clamp(20px, 2.5vw, 30px);
+  font-weight: 700;
+  border: 2px dashed #3a3a48;
+  border-radius: 10px;
+}
+.game-pose-name {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 48px);
+  letter-spacing: 0.08em;
+}
+.game-progress {
+  width: min(560px, 90%);
+  height: 18px;
+  margin-top: 0;
+}
+.progress-fill[data-phase="TARGET_CONFIRMED"] {
+  background: var(--ok);
+}
+.game-status {
+  font-size: clamp(24px, 3.5vw, 40px);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+.game-status[data-phase="TARGET_MATCHING"] {
+  color: var(--accent);
+}
+.game-status[data-phase="TARGET_CONFIRMED"] {
+  color: var(--ok);
+}
+.game-status[data-phase="TRANSITION"] {
+  color: var(--muted);
+}
+.game-status[data-phase="PAUSED"] {
+  color: var(--bad);
+}
+.game-hint {
+  min-height: 1.4em;
+  color: var(--muted);
+  font-size: 18px;
+}
+.game-hits {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 0.06em;
+}
+
+@media (max-width: 800px) {
+  body[data-mode="game"] .viewer {
+    flex-basis: auto;
+    width: 100%;
+  }
+}
+
+/* ---- Game mode: 3D arena dominates, pose card bottom-left, webcam bottom-right ---- */
+
+.arena {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+.arena canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.arena-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+.arena-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 55%, rgba(255, 220, 140, 0.55), rgba(255, 220, 140, 0) 60%);
+  opacity: 0;
+}
+.arena-flash.flash {
+  animation: arena-flash 0.28s ease-out;
+}
+@keyframes arena-flash {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.combat-debug {
+  position: fixed;
+  top: 64px;
+  right: 12px;
+  z-index: 3;
+  margin: 0;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.65);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+body[data-mode="game"] {
+  overflow: hidden;
+}
+body[data-mode="game"] .app {
+  position: relative;
+  z-index: 2;
+  max-width: none;
+  pointer-events: none;
+}
+body[data-mode="game"] .app button,
+body[data-mode="game"] .app a {
+  pointer-events: auto;
+}
+body[data-mode="game"] .header h1 {
+  font-size: clamp(20px, 2.4vw, 30px);
+  text-shadow: 0 2px 8px #000;
+}
+body[data-mode="game"] .instruction {
+  text-shadow: 0 2px 6px #000;
+}
+body[data-mode="game"] .intro,
+body[data-mode="game"] .error {
+  max-width: 560px;
+  margin: 12vh auto 0;
+  background: rgba(11, 11, 16, 0.82);
+  border-radius: 16px;
+}
+
+body[data-mode="game"] .game-panel {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  width: min(300px, 30vw);
+  gap: 6px;
+  padding: 12px;
+  background: rgba(11, 11, 16, 0.82);
+}
+body[data-mode="game"] .game-card img {
+  height: min(30vh, 300px);
+}
+body[data-mode="game"] .game-ref-fallback {
+  height: auto;
+  min-height: 120px;
+  font-size: 18px;
+}
+body[data-mode="game"] .game-pose-name {
+  font-size: clamp(20px, 2.2vw, 30px);
+}
+body[data-mode="game"] .game-status {
+  font-size: clamp(20px, 2.2vw, 30px);
+}
+body[data-mode="game"] .game-hint {
+  font-size: 14px;
+  text-align: center;
+}
+body[data-mode="game"] .game-hits {
+  font-size: 16px;
+}
+
+body[data-mode="game"] .viewer {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: min(300px, 26vw);
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+}
+body[data-mode="game"] .hud {
+  padding: 6px;
+}
+body[data-mode="game"] .chip {
+  font-size: 11px;
+}
+
+@media (max-width: 800px) {
+  body[data-mode="game"] .game-panel {
+    width: 46vw;
+  }
+  body[data-mode="game"] .viewer {
+    width: 44vw;
+  }
+}
+
+/* ---- Survival HUD (functional) ---- */
+
+.damage-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(120, 0, 0, 0) 45%, rgba(150, 0, 10, 0.55) 100%);
+  opacity: 0;
+}
+.damage-flash.flash {
+  animation: arena-flash 0.35s ease-out;
+}
+
+.survival-bar {
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 16px;
+  background: rgba(11, 11, 16, 0.78);
+  border-radius: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.survival-bar.hit {
+  animation: bar-hit 0.3s ease-out;
+}
+@keyframes bar-hit {
+  30% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+}
+.health {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.health-label {
+  font-size: 13px;
+  color: var(--muted);
+}
+.health-track {
+  width: min(240px, 22vw);
+  height: 14px;
+  background: #2a1418;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.health-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--ok);
+  transition: width 0.2s ease-out;
+}
+.health-fill[data-level="mid"] {
+  background: var(--accent);
+}
+.health-fill[data-level="low"] {
+  background: var(--bad);
+}
+.health-text {
+  font-size: 13px;
+  min-width: 70px;
+}
+.stat {
+  font-size: 16px;
+}
+.stat-muted {
+  color: var(--muted);
+}
+
+.survival-banner {
+  position: fixed;
+  top: 26%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  font-size: clamp(36px, 6vw, 72px);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-shadow: 0 4px 20px #000;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.survival-banner[data-kind="complete"] {
+  color: var(--ok);
+}
+.survival-banner[data-kind="paused"] {
+  color: var(--bad);
+  font-size: clamp(28px, 4.5vw, 54px);
+}
+
+.center-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+  z-index: 4;
+  width: min(440px, 90vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  background: rgba(11, 11, 16, 0.88);
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+}
+.center-panel h2 {
+  margin: 0;
+  letter-spacing: 0.1em;
+}
+.center-panel p {
+  margin: 0;
+}
+.panel-hint {
+  color: var(--muted);
+  font-size: 14px;
+}
+.gameover-title {
+  color: var(--bad);
+  font-size: clamp(32px, 5vw, 52px);
+}
+.gameover-line {
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Sound settings (top-right, under the survival bar) ---- */
+.audio-controls {
+  position: fixed;
+  top: 64px;
+  right: 16px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  background: rgba(11, 11, 16, 0.72);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.audio-mute {
+  font: inherit;
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+.audio-mute.muted {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+.audio-slider {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.audio-slider input {
+  width: 72px;
+  accent-color: var(--accent);
+}
+.audio-controls.is-muted .audio-slider {
+  opacity: 0.45;
+}
+@media (max-width: 800px) {
+  .audio-slider input {
+    width: 48px;
+  }
+}

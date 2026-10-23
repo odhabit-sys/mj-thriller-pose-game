@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MJ Thriller Pose Game</title>
+    <meta name="description" content="A browser game where your webcam becomes the controller. Copy iconic dance poses to unleash attacks against approaching zombies." />
+    <meta property="og:title" content="MJ Thriller Pose Game" />
+    <meta property="og:description" content="Your webcam is the controller: copy the pose, hold it, and blast the zombies." />
+    <meta name="theme-color" content="#0b0b10" />
+  </head>
+  <body>
+    <!-- GAME MODE: full-screen 3D arena behind the UI -->
+    <div id="arena" class="arena game-only"></div>
+    <div id="arena-flash" class="arena-flash game-only"></div>
+    <div id="damage-flash" class="damage-flash game-only"></div>
+
+    <!-- SURVIVAL HUD (functional, not final) -->
+    <div id="survival-bar" class="survival-bar game-only hidden">
+      <div class="health">
+        <span class="health-label">HEALTH</span>
+        <div class="health-track"><div class="health-fill" id="health-fill"></div></div>
+        <span class="health-text" id="health-text">100 / 100</span>
+      </div>
+      <span class="stat" id="wave-text">WAVE 1</span>
+      <span class="stat" id="score-text">SCORE 0</span>
+      <span class="stat stat-muted" id="best-text">BEST 0</span>
+    </div>
+    <div id="survival-banner" class="survival-banner game-only hidden"></div>
+
+    <!-- Sound settings (saved locally in this browser) -->
+    <div id="audio-controls" class="audio-controls game-only hidden" role="group" aria-label="Sound settings">
+      <button id="audio-mute" class="audio-mute" type="button" aria-pressed="false">SOUND ON</button>
+      <label class="audio-slider">MUSIC <input id="audio-music" type="range" min="0" max="100" step="1" /></label>
+      <label class="audio-slider">SFX <input id="audio-sfx" type="range" min="0" max="100" step="1" /></label>
+    </div>
+
+    <section id="start-panel" class="center-panel game-only hidden">
+      <h2>READY?</h2>
+      <p>Copy the pose on the card to blast the zombies. Don't let them reach MJ.</p>
+      <button id="start-game" class="big-button" type="button" disabled>START GAME</button>
+      <p class="panel-hint" id="start-hint"></p>
+    </section>
+
+    <section id="gameover-panel" class="center-panel game-only hidden" role="alert">
+      <h2 class="gameover-title">GAME OVER</h2>
+      <p class="gameover-line" id="gameover-score">SCORE: 0</p>
+      <p class="gameover-line" id="gameover-best">BEST: 0</p>
+      <p class="gameover-line" id="gameover-wave">WAVE: 1</p>
+      <button id="restart-game" class="big-button" type="button">RESTART</button>
+    </section>
+    <pre id="combat-debug" class="combat-debug game-only hidden"></pre>
+    <main class="app">
+      <header class="header">
+        <div class="title-row">
+          <h1>MJ POSE <span class="game-only">GAME</span><span class="debug-only">TEST</span></h1>
+          <a class="mode-link game-only" href="?debug=true">debug tools</a>
+          <a class="mode-link debug-only" href="./">back to game</a>
+        </div>
+        <p class="instruction">Match the pose to attack.</p>
+        <!-- DEBUG MODE: manual pose selector for testing one pose at a time -->
+        <div class="pose-select debug-only" id="pose-select" role="group" aria-label="Pose to test">
+          <span class="pose-select-label">POSE TO TEST:</span>
+        </div>
+        <p class="target debug-only">Target pose: <strong id="target-desc"></strong> (either side)</p>
+      </header>
+
+      <section class="intro" id="intro">
+        <button id="enable-camera" class="big-button" type="button">ENABLE CAMERA</button>
+        <p class="privacy">Video is processed locally in your browser. Nothing is recorded, saved, or uploaded.</p>
+      </section>
+
+      <section class="error hidden" id="error" role="alert">
+        <p id="error-message"></p>
+        <button id="retry" class="big-button small" type="button">TRY AGAIN</button>
+      </section>
+
+      <div class="workspace">
+      <!-- GAME MODE: the requested pose, big -->
+      <section class="game-panel hidden" id="game-panel" aria-live="polite">
+        <p class="game-kicker">MATCH THIS POSE</p>
+        <div class="game-card" id="game-card">
+          <!-- Pose image: local reference photos in development, original pose illustrations (public/poses/) in production; text fallback if missing -->
+          <img id="game-ref" class="hidden" alt="Pose to copy" />
+          <div id="game-ref-fallback" class="game-ref-fallback hidden"></div>
+        </div>
+        <h2 class="game-pose-name" id="game-pose-name">—</h2>
+        <div class="progress game-progress"><div class="progress-fill" id="game-progress-fill"></div></div>
+        <div class="game-status" id="game-status">GET READY</div>
+        <div class="game-hint" id="game-hint"></div>
+        <div class="game-hits" id="game-hits">POSES HIT: 0</div>
+      </section>
+
+      <section class="viewer hidden" id="viewer">
+        <!-- .stage is mirrored as ONE unit (video + skeleton canvas), see styles.css -->
+        <div class="stage" id="stage">
+          <video id="video" playsinline muted></video>
+          <canvas id="skeleton"></canvas>
+        </div>
+
+        <!-- HUD lives outside the mirrored stage so its text reads normally -->
+        <div class="hud">
+          <div class="hud-top">
+            <span class="chip" id="tracking-chip">Starting…</span>
+            <span class="chip" id="state-chip">SEARCHING</span>
+            <span class="chip" id="count-chip">Matches: 0</span>
+          </div>
+          <div class="status" id="status">Loading…</div>
+          <div class="progress"><div class="progress-fill" id="progress-fill"></div></div>
+          <div class="matched-banner hidden" id="matched-banner">POSE MATCHED</div>
+        </div>
+      </section>
+
+      <!-- DEV ONLY: local reference photo for testing. Not part of the game, never bundled. -->
+      <aside class="reference debug-only hidden" id="reference">
+        <img id="reference-img" alt="Pose reference (local dev only)" />
+        <p>Reference (dev only). Upper body only, mirrored version counts.</p>
+      </aside>
+      </div>
+
+      <details class="debug hidden" id="debug" open>
+        <summary>Debug metrics</summary>
+        <pre id="debug-text"></pre>
+      </details>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
